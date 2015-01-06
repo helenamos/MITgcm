@@ -1,0 +1,164 @@
+C $Header: /u/gcmpack/MITgcm/pkg/pcb/pcb_diagnostics_init.F,v 1.0 
+C $Name:  $
+
+#include "CPP_OPTIONS.h"
+#include "PTRACERS_OPTIONS.h"
+#include "PCB_OPTIONS.h"
+
+#ifdef ALLOW_PTRACERS
+#ifdef ALLOW_PCB
+
+CBOP
+C==================================================================
+C ROUTINE HG_DIAGNOSTICS_INIT
+C INTERFACE:
+      SUBROUTINE PCB_DIAGNOSTICS_INIT( myThid )
+C
+C DESCRIPTION:
+C   Routine to initialize PCB diagnostics
+C
+C MODIFICATION HISTORY 
+C   15 Jul 2014 - hma - Comment out PCBi tracer. Rename PCBn to
+C                       PCBa.    
+C==================================================================
+
+C     !USES:
+      IMPLICIT NONE
+
+C     === Global variables ===
+#include "SIZE.h"
+#include "PTRACERS_SIZE.h"
+#include "EEPARAMS.h"
+#include "PARAMS.h"
+#include "GCHEM.h"
+#include "PCB_SIZE.h"
+#include "PCB.h"
+
+C     !INPUT/OUTPUT PARAMETERS:
+C     === Routine arguments ===
+C     myThid -  Number of this instance of HG_DIAGNOSTICS_INIT
+      INTEGER myThid
+CEOP
+
+#ifdef ALLOW_DIAGNOSTICS
+C     !LOCAL VARIABLES:
+C     === Local variables ===
+C     msgBuf      - Informational/error meesage buffer
+c     CHARACTER*(MAX_LEN_MBUF) msgBuf
+
+      INTEGER       diagNum
+      CHARACTER*8   diagName
+      CHARACTER*16  diagCode
+      CHARACTER*16  diagUnits
+      CHARACTER*(80) diagTitle
+
+      INTEGER      np
+
+C---+----1----+----2----+----3----+----4----+----5----+----6----+----7-|--+----|
+
+C--   Add diagnostics to the (long) list
+
+C--   Add diagnostic PCBiDEPO, PCBaCONC, PCBaEVAS, PCBiREDN, and PCBPSINK
+
+      diagName = 'PCBaSPRY'
+      WRITE(diagTitle, '(A)') 'PCBa seaspray '
+      diagUnits = 'mol/m^2/s          '
+      diagCode  = 'SM P    M1      '
+      CALL DIAGNOSTICS_ADDTOLIST( diagNum,
+     I             diagName, diagCode, diagUnits, diagTitle, 0, myThid )
+
+c Remove PCBi tracer. (hma, 15 Jul 2014)
+c      diagName = 'PCBiSPRY'
+c      WRITE(diagTitle, '(A)') 'PCBi seaspray '
+c      diagUnits = 'mol/m^2/s          '
+c      diagCode  = 'SM P    M1      '
+c      CALL DIAGNOSTICS_ADDTOLIST( diagNum,
+c     I             diagName, diagCode, diagUnits, diagTitle, 0, myThid )
+
+      diagName = 'PCBaCONC'
+      WRITE(diagTitle, '(A)') 'Atmospheric PCBa concentration'
+      diagUnits = 'ng/m^3          '
+      diagCode  = 'SM P    M1      '
+      CALL DIAGNOSTICS_ADDTOLIST( diagNum,
+     I             diagName, diagCode, diagUnits, diagTitle, 0, myThid )
+
+      diagName = 'PCBaEVAS'
+      WRITE(diagTitle, '(A)') 'PCBa evasion flux from ocean'
+      diagUnits = 'mol/m^2/s       '
+      diagCode  = 'SM P    M1      '
+      CALL DIAGNOSTICS_ADDTOLIST( diagNum,
+     I             diagName, diagCode, diagUnits, diagTitle, 0, myThid )
+          
+c Remove PCBi tracer. (hma, 15 Jul 2014)
+c      diagName = 'PCBiDEPO'
+c      WRITE(diagTitle, '(A)') 'Atmospheric PCBi deposition flux'
+c      diagUnits = 'mol/m^2/s       '
+c      diagCode  = 'SM P    M1      '
+c      CALL DIAGNOSTICS_ADDTOLIST( diagNum,
+c     I             diagName, diagCode, diagUnits, diagTitle, 0, myThid )
+
+      ! This should be zero. River inputs are neglible for PCBs, so
+      ! they're not considered as a source. (hma, 14 Jul 2014)
+      diagName = 'PCBaRIVR'
+      WRITE(diagTitle, '(A)') 'PCBa riverine runoff'
+      diagUnits = 'mol/m^2/s       '
+      diagCode  = 'SM P    M1      '
+      CALL DIAGNOSTICS_ADDTOLIST( diagNum,
+     I             diagName, diagCode, diagUnits, diagTitle, 0, myThid )
+
+c Remove PCBi tracer. (hma, 15 Jul 2014)
+c      ! This should be zero. River inputs are neglible for PCBs, so
+c      ! they're not considered as a source. (hma, 14 Jul 2014)
+c      diagName = 'PCBiRIVR'
+c      WRITE(diagTitle, '(A)') 'PCBi riverine runoff'
+c      diagUnits = 'mol/m^2/s       '
+c      diagCode  = 'SM P    M1      '
+c      CALL DIAGNOSTICS_ADDTOLIST( diagNum,
+c     I             diagName, diagCode, diagUnits, diagTitle, 0, myThid )
+
+      ! This should be zero. River inputs are neglible for PCBs, so
+      ! they're not considered as a source. (hma, 14 Jul 2014)
+      diagName = 'PCBpRIVR'
+      WRITE(diagTitle, '(A)') 'PCBp riverine runoff'
+      diagUnits = 'mol/m^2/s       '
+      diagCode  = 'SM P    M1      '
+      CALL DIAGNOSTICS_ADDTOLIST( diagNum,
+     I             diagName, diagCode, diagUnits, diagTitle, 0, myThid )          
+
+      diagName = 'PCBaPART'
+      WRITE(diagTitle, '(A)') 'PCBa partitioned onto particles'
+      diagUnits = 'mol/m^3/s       '
+      diagCode  = 'SM P    MR      '
+      CALL DIAGNOSTICS_ADDTOLIST( diagNum,
+     I             diagName, diagCode, diagUnits, diagTitle, 0, myThid )
+
+c Remove PCBi tracer. (hma, 15 Jul 2014)
+c      diagName = 'PCBiPART'
+c      WRITE(diagTitle, '(A)') 'PCBi partitioned onto particles'
+c      diagUnits = 'mol/m^3/s       '
+c      diagCode  = 'SM P    MR      '
+c      CALL DIAGNOSTICS_ADDTOLIST( diagNum,
+c     I             diagName, diagCode, diagUnits, diagTitle, 0, myThid )
+
+      diagName = 'PCBpPART'
+      WRITE(diagTitle, '(A)') 'PCBp partitioned onto particles'
+      diagUnits = 'mol/m^3/s       '
+      diagCode  = 'SM P    MR      '
+      CALL DIAGNOSTICS_ADDTOLIST( diagNum,
+     I             diagName, diagCode, diagUnits, diagTitle, 0, myThid )
+     
+      diagName = 'PCBpSINK'
+      WRITE(diagTitle, '(A)') 'PCBp sinking flux at level bottom'
+      diagUnits = 'mol/m^2/s       '
+      diagCode  = 'SM P    MR      '
+      CALL DIAGNOSTICS_ADDTOLIST( diagNum,
+     I             diagName, diagCode, diagUnits, diagTitle, 0, myThid )         
+
+
+#endif /* ALLOW_DIAGNOSTICS */
+
+      RETURN
+      END     
+C============================================================================
+#endif
+#endif

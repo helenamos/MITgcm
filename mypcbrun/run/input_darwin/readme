@@ -1,0 +1,12 @@
+units: 
+doc,poc,phyto,zoo: mmolC/m3
+NO3: mmolN/m3
+Note: poc here includes plankton mass
+Fdoc,Fpoc: mmolC/m3 * m/d
+Fremin: mmolC/m3 * 1/d
+npp: mmolC/m3/s
+phytoP: phytoplankton C, mmolC/m3
+zooP: phytoplankton C, mmolC/m3
+chl: mg chl/m3
+
+fremin: has imposed temp function based on monthly temperature. the old file has not.

@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+# $Header: /u/gcmpack/MITgcm/tools/build_options/linux_ia64_ifort+mpi_swell,v 1.4 2010/03/21 17:58:17 jmc Exp $
+# $Name: checkpoint64g $
+
+# Build options for Harvard cluster "hpc"
+
+FC=mpif90
+F90C=mpif90
+CC=mpicc
+LINK='mpif90'
+
+#NETCDF_ROOT=/home/yxzhang/netcdf-3.6.3/install
+DEFINES='-DWORDLENGTH=4 -DALLOW_USE_MPI -DALWAYS_USE_MPI'
+CPP='cpp  -traditional -P'
+EXTENDED_SRC_FLAG='-132'
+
+#latest
+INCLUDES='-I/n/sw/openmpi-1.6.2_intel-13.0.079/include -I/n/sw/intel_cluster_studio-2013/mkl/include'
+LIBS='-L/n/sw/openmpi-1.6.2_intel-13.0.079/lib -L/n/sw/intel_cluster_studio-2013/mkl/lib/intel64'
+
+#1.5.3 intel
+#INCLUDES='-I/n/sw/openmpi-1.5.3_intel-12.3.174/include -I/n/sw/intel/mkl/10.3.1.107/composerxe-2011.3.174/mkl/include'
+#LIBS='-L/n/sw/openmpi-1.5.3_intel-12.3.174/lib -L/n/sw/intel/mkl/10.3.1.107/composerxe-2011.3.174/mkl/lib'
+
+#1.4.2 intel
+#INCLUDES='-I/software/linux/x86_64/openmpi-1.4.2-intel/include'
+#LIBS='-L/software/linux/x86_64/openmpi-1.4.2-intel/lib'
+
+#1.2.8 intel
+#INCLUDES='-I/opt/openmpi/intel/include'
+#LIBS='-L/opt/openmpi/intel/lib/'
+
+#  Note that the -mp switch is for ieee "maintain precision" and is
+#  roughly equivalent to -ieee
+if test "x$IEEE" = x ; then
+    FFLAGS="$FFLAGS -g -convert big_endian -assume byterecl -vec_report0 -fpe0"
+    FOPTIM='-O3 -align'
+#P3 FOPTIM=$FOPTIM' -tpp6 -xWKM'
+#P4 FOPTIM=$FOPTIM' -tpp7 -xWKM'
+else
+    FOPTIM='-O0 -noalign'
+    FFLAGS="$FFLAGS -W0 -WB -xN -pc64 -convert big_endian -assume byterecl -vec_report0 -fpe0"
+   #FFLAGS="$FFLAGS -mp -w95 -W0 -WB"
+fi
+#- might want to use '-r8' for fizhi pkg:
+#FFLAGS="$FFLAGS -r8"
+

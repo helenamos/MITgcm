@@ -1,0 +1,605 @@
+C $Header: /u/gcmpack/MITgcm/pkg/pcb/pcb01_surfforcing.F, Exp $
+C $Name:  $
+
+#include "GCHEM_OPTIONS.h"
+#include "PCB_OPTIONS.h"
+
+CBOP
+C     !ROUTINE: PCBa_SURFFORCING
+C     !INTERFACE:
+      SUBROUTINE PCBa_SURFFORCING( Ptr, SurfPCBa,
+     I                          bi, bj, iMin, iMax, jMin, jMax,
+     I                          myIter, myTime, myThid )
+
+      !DESCRIPTION:
+      !==========================================================
+      ! SUBROUTINE PCBa_SURFFORCING
+      !   Calculate the PCBa air-sea fluxes
+      !
+      ! MODIFICATION HISTORY
+      !   ?? Jul 2014 - hma - PFOS code inherited from Xianming Zhang and
+      !                       adopted for PCBs.
+      !   07 Aug 2014 - hma - add inputs from atmospheric deposition
+      !==========================================================
+
+      !USES:
+      IMPLICIT NONE
+
+C     == GLobal variables ==
+#include "SIZE.h"
+#include "EEPARAMS.h"
+#include "PARAMS.h"
+#include "GRID.h"
+#include "DYNVARS.h"
+#include "PTRACERS_SIZE.h"
+#include "PTRACERS_PARAMS.h"
+#include "PCB_SIZE.h" !in ./code/pcb_size.h
+#include "PCB.h"
+
+C     !INPUT/OUTPUT PARAMETERS:
+C     pTr_PCB01  :: ocean PCB01 concentration
+C     AtmosPCB01 :: atmospheric PCB01 field
+C     fluxPCB01  :: air-sea PCB01 fluxes
+C     bi, bj     :: current tile indices
+C     iMin,iMax  :: computation domain, 1rst index bounds
+C     jMin,jMax  :: computation domain, 2nd  index bounds
+C     myTime     :: current time in simulation
+C     myIter     :: current iteration number
+C     myThid     :: my Thread Id number
+      _RL  PTR (1-OLx:sNx+OLx,1-OLy:sNy+OLy,Nr, 
+     &             nSx, nSy, PTRACERS_num)
+      _RL  SurfPCBa (1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+      _RL  FluxPCBa(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+c declared in PFC.h
+c      _RL  PCBaRiver(1-OLx:sNx+OLx,1-OLy:sNy+OLy,nSx,nSy)
+      _RL  pcbarivero, pcbaevaso
+c declared in PFC.h
+c      _RL  PCBaAtmDep(1-OLx:sNx+OLx,1-OLy:sNy+OLy,nSx,nSy) ! atmospheric deposition
+      _RL  pcbadepoo                                        ! atmospheric deposition
+#ifdef ALLOW_SEASPRAY
+      _RL pcbaseasprayo
+#endif
+      _RL myTime
+      INTEGER iMin, iMax, jMin, jMax, bi, bj
+      INTEGER myIter, myThid
+CEOP
+
+#ifdef ALLOW_PTRACERS
+#ifdef ALLOW_PCB
+
+C     !LOCAL VARIABLES:
+C i, j, k - Loop counters
+      INTEGER i,j,k
+C Solubility relation coefficients
+      _RL etaA, rhoA
+      _RL etaW
+      _RL SchmidtAPCBa
+      _RL SchmidtWPCBa
+      _RL DiffusivityAir(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+      _RL DiffusivitySurfWater(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+      _RL ka(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+      _RL kw(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+      _RL Kaexch(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+c      _RL Kwexch(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+      
+      _RL KawPCBa(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+      _RL KawPCBeff(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+
+c     _RL pcb01sat(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+
+c      _RL Csat(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+      _RL ttemp, ttemp2
+      _RL temp1, temp2, temp3, temp4, temp5, temp6
+      _RL doco
+      _RL C2K      ! conversion factor, Celcius to Kelvin (hma, 22 jul 2014)
+      _RL R        ! universal gas constant (hma, 22 jul 2014)
+      _RL TK0      ! temperature at standard conditions (hma, 22 jul 2014)
+      _RL KH       ! liquid-over-gas Henry's law constant (hma, 22 jul 2014)
+      _RL KHcc     ! dimensionless liquid-over-gas Henry's law constant (hma, 22 jul 2014)
+      _RL KawD     ! dimensionless gas-over-liquid Henry's law constant (hma, 22 jul 2014)
+      _RL eta_s    ! dynamic viscocity of water 
+      _RL Ms       ! relative molecular mass of water
+      _RL PHI      ! association factor of water
+#ifdef ALLOW_DIAGNOSTICS      
+      _RL pcbaconc_diag(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+      _RL pcbaevas_diag(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+#ifdef ALLOW_SEASPRAY
+      _RL pcbaseaspray_diag(1-OLx:sNx+OLx,1-OLy:sNy+OLy)
+#endif
+      _RL pcbariver_diag(1-OLx:sNx+OLx,1-OLy:sNy+OLy) ! river inputs
+      _RL pcbaconco                                   ! atmospheric concentration?
+      _RL pcbadep_diag(1-OLx:sNx+OLx,1-OLy:sNy+OLy)   ! atmospheric deposition
+      CHARACTER*8 diagname
+#endif
+
+      !------------------------------------------------
+      ! Set up constants
+      !------------------------------------------------
+
+      ! Conversion factor, Celcius to Kelvin
+      C2K = 273.15d0     
+ 
+      ! Universal gas constant (m^3 Pa mol^-1 K^-1 or J K^-1 mol^-1)
+      R   = 8.314d0
+ 
+      ! Temperature at standard conditions (Kelvin)
+      TK0 = 298.15d0
+                                   
+C Initialize diagnostics
+#ifdef ALLOW_DIAGNOSTICS
+      DO j=jMin,jMax
+        DO i=iMin,iMax
+            ! atmospheric concentration
+            pcbaconc_diag(i,j)     = 0.d0
+            
+            ! evasion (to the atmosphere?)
+            pcbaevas_diag(i,j)     = 0.d0
+
+#ifdef ALLOW_SEASPRAY
+            ! sea spray
+            pcbaseaspray_diag(i,j) = 0.d0
+#endif
+            ! inputs from rivers
+            pcbariver_diag(i,j)    = 0.d0
+
+            ! inputs from atmospheric deposition
+            pcbadep_diag(i,j)      = 0.d0
+        ENDDO
+      ENDDO
+#endif      
+
+      
+c      write(*,*) 'pcba air-sea exchange'
+C calculate SCHMIDT NO. 
+        DO j=jMin,jMax
+         DO i=iMin,iMax
+C           IF ( maskC(i,j,k,bi,bj).NE.zeroRS ) THEN !CFC code
+
+C     yanxu hg code  IF (HFacC(i,j,1,bi,bj).GT.0.5) THEN 
+
+            !---------------------------------------
+            ! Are you in an ocean box?
+            !   Ocean box when HFacC = 1
+            !   Land  box when HFacC = 0
+            !---------------------------------------
+            IF (HFacC(i,j,1,bi,bj).GT.0.1) THEN 
+
+              !-------------------------------------
+              ! Local variables
+              !-------------------------------------
+
+              ! Atmospheric PCB concentration (units?)
+              pcbaconco = max(pcbaconc(i,j,bi,bj),0.d0)
+
+C Not considering rivers for PCBs. (hma, 18 Jul 2014)
+C            river : kg/s    -> mol/m2/s
+C             pcbarivero = PCBaRiver(i,j,bi,bj)*recip_rA(i,j,bi,bj)
+C     &           *1000.d0/(Mb-1.d0)
+
+              ! Inputs from atmospheric deposition (will want this to be units of mol/m2/s)
+              pcbadepoo = PCBaDEP(i,j,bi,bj) ! x conversion factors?
+
+              ! DOC concentration? (units?)
+              doco     = max(doc(i,j,1,bi,bj),0.d0)
+                  
+      !---------------------------------------------------------
+      ! CALCULATE SCHMIDT NUMBER FOR PCBa
+      !
+      !   From Johnson (2010), Ocean Science:
+      !
+      !   Schmidt number in air:
+      !   Sca = v_a / D_a = eta_a / ( rho_a * D_a )                [Eq. 23]
+      !   
+      !   dynamic viscosity:
+      !   etaA = sv_0 + sv_1*t + sv_2*t^2 + sv_3*t^3 + sv_4*t^4    [Eq. 24]
+      !
+      !   density:
+      !   rhoA = sd_0 + sd_1*t + sd_2*t^2 + sd_3*t^3               [Eq. 25]
+      !
+      !   diffusion coefficient in air:
+      !   Da = 0.001 * (T^1.75) * (Mr^0.5) / ( (P*Va^1/3) + Vb^1/3 )^2   [Eq. 26]
+      !
+      !   Mr = ( Ma + Mb ) / (Ma * Mb)                             [Eq. 27]
+      !
+      !   where t is temperature in degrees Celcius, the units on etaA are
+      !   kg m^-3, and the units on rhoA are kg m^-3. Values of sv_* and 
+      !   sd_* are in Table A1 of Johnson (2010), which references 
+      !   Tsilingiris (2008). P is the atmospheric pressure in atm. Va and
+      !   Vb are the molar volumes of air and of the gas of interest, 
+      !   respectively. Ma and Mb are the molecular masses of air and the
+      !   gas of interest, respectively. T is temperautre in Kelvin.
+      !  
+      ! References:
+      ! Johnson, M. T. A numerical scheme to calculate temperature and 
+      !   salinity dependent air-water transfer velocities for any gas.
+      !   Ocean Science, 6, 913-932, 2010.
+      !
+      ! Tsilingiris, P. Thermophysical and transport properties of 
+      !   humid air at temperature ranges between 0 and 100 C. Energ.
+      !   Convers. Manage, 49, 1098-1110, 2008.
+      !
+      ! Tucker, W. A. and Nelken, L. H. Diffusion coefficients in air
+      !   and water, in: Handbook of Chemical Property Estimatation
+      !   Methods, American Chemical Society, Washington D. C., 1990.
+      !---------------------------------------------------------
+            k=1
+            !---------------------------------------------------
+            ! Dynamic viscosity of air (kg m^-3)
+            !
+            ! Eq. 24 from Johnson (2010)
+            !---------------------------------------------------
+c re-write to use "^", more compact (hma, 21 jul 2014)
+c            etaA = sv_0
+c     &          + sv_1 * theta(i,j,k,bi,bj)
+c     &          + sv_2 * theta(i,j,k,bi,bj)*theta(i,j,k,bi,bj)
+c     &          + sv_3 * theta(i,j,k,bi,bj)*theta(i,j,k,bi,bj)
+c     &                *theta(i,j,k,bi,bj)
+c     &          + sv_4 * theta(i,j,k,bi,bj)*theta(i,j,k,bi,bj)
+c     &                *theta(i,j,k,bi,bj)*theta(i,j,k,bi,bj)
+            etaA =  sv_0
+     &          +   sv_1 * theta(i,j,k,bi,bj)
+     &          + ( sv_2 * theta(i,j,k,bi,bj)**2 )
+     &          + ( sv_3 * theta(i,j,k,bi,bj)**3 )
+     &          + ( sv_4 * theta(i,j,k,bi,bj)**4 )
+
+            !---------------------------------------------------
+            ! Density of air (kg m^-3)
+            !
+            ! Eq. 25 from Johnson (2010) 
+            !---------------------------------------------------
+c            rhoA = sd_0
+c     &          + sd_1 * theta(i,j,k,bi,bj)
+c     &          + sd_2 * theta(i,j,k,bi,bj)*theta(i,j,k,bi,bj)
+c     &          + sd_3 * theta(i,j,k,bi,bj)*theta(i,j,k,bi,bj)
+c     &                *theta(i,j,k,bi,bj)
+            rhoA = sd_0
+     &          +   sd_1 * theta(i,j,k,bi,bj)
+     &          + ( sd_2 * theta(i,j,k,bi,bj)**2 )
+     &          + ( sd_3 * theta(i,j,k,bi,bj)**3 )     
+            
+            !---------------------------------------------------
+            ! Diffusion coefficient in air (cm^2 sec^-1)
+            !
+            ! Eq.26-27 from Johnson (2010) 
+            !---------------------------------------------------
+            temp1 = (Ma + Mb) / (Ma * Mb)
+            temp2 = Va**(1.0d0/3.0d0) +Vb**(1.0d0/3.0d0)
+            DiffusivityAir (i,j) = 1.0d-3*(theta(i,j,k,bi,bj)+C2K)
+     &       **1.75d0*temp1**0.5d0/(Patm*temp2**2.0d0) 
+         
+            !---------------------------------------------------
+            ! Schmidt number in air (units?)
+            !
+            ! Eq. 23 from Johnson (2010)
+            !---------------------------------------------------
+            SchmidtAPCBa = etaA/rhoA/DiffusivityAir(i,j) 
+     
+            !---------------------------------------------------
+            ! Diffusivity of the gas of interest in water (cm^2 sec^-1)
+            !
+            ! Eq. 33 from Johnson (2010)
+            ! Reference: Wilke and Chang (1955) 
+            !---------------------------------------------------
+            C2K = 273.15d0     ! convert Celcius to Kelvin
+
+c Shouldn't theta be raised to the power of 1.52? (hma, 05 Aug 2014)      
+c Answer: Yes, it should. Xianming also reccommends using
+c         Eq 33 instead of 34. 
+c            DiffusivitySurfWater (i,j) 
+c     &   = 1.25d-8*(theta(i,j,k,bi,bj)+C2K)
+c     &     *1.219**(9.58d0/Vb-1.12d0)*(Vb**(-0.19d0)-0.292d0)
+
+            ! dynamic viscosity of the solvent (water)
+            !
+            ! Xianming Zhang estimate this value from Table 2 in Johnson (2010)
+            eta_s = 1.219d0
+
+            ! Relative molecular mass of the solvent (water)
+            Ms = 18.01d0
+
+            ! Association factor of the solvent (water)
+            PHI = 2.6d0
+
+            DiffusivitySurfWater (i,j)
+     &     = (7.4d-8 * ( theta(i,j,k,bi,bj)+C2K ) * SQRT( PHI * Ms ) )
+     &     / ( eta_s * (Vb**0.6d0) ) 
+        
+            !---------------------------------------------------
+            ! Dynamic viscosity of water (kg m^-3)
+            !
+            ! Eq. 31 from Johnson (2010)
+            !---------------------------------------------------
+            temp3 = 0.05594d0*theta(i,j,k,bi,bj)**2
+     &    +5.2842d0*theta(i,j,k,bi,bj)+137.37d0
+
+            etaW = (theta(i,j,k,bi,bj)+246d0)
+     &   /(temp3)
+           
+            !---------------------------------------------------
+            ! Schmidt number in water 
+            !
+            ! Eq. 29 from Johnson (2010) 
+            ! 1.03d3 is the density of water (kg m^-3)
+            !---------------------------------------------------
+            SchmidtWPCBa = etaW/1.03d3/DiffusivitySurfWater (i,j)
+           
+            !---------------------------------------------------
+            ! Air side transfer velocity (m/sec)
+            !
+            ! Eq. 15-16 from Johnson (2010)
+            !--------------------------------------------------- 
+            temp4 =  wind(i,j,bi,bj)
+     &           *sqrt(6.1d-4+6.3d-5*wind(i,j,bi,bj))
+            
+            temp5 = 13.3d0*sqrt(SchmidtAPCBa)
+     &           +1.3d-3**(-0.5d0)-5
+     &           +log(SchmidtAPCBa)/2.d0/0.4d0
+            
+            ka (i,j) = (1.0d-3+temp4/temp5)
+           
+            !---------------------------------------------------
+            ! Water side transfer velocity (m/sec)
+            !
+            ! Eq. 28 from Johnson (2010)
+            !--------------------------------------------------- 
+            temp6 = 0.222d0*wind(i,j,bi,bj)*wind(i,j,bi,bj)
+     &   +0.333d0*wind(i,j,bi,bj)
+            
+            kw = temp6*(SchmidtWPCBa/600.d0)**(-0.5d0)
+            
+            !--------------------------------------------------- 
+            ! Dimensionless gas-over-liquid Henry's law 
+            ! constant (KawD)
+            !
+            ! -----------------------
+            ! GAS-OVER-LIQUID
+            ! -----------------------
+            !
+            ! From Johnson (2010):
+            !   KawD = C_air / C_water                      [Eq. 2]
+            !
+            !   where C_air and C_water are the equilibrium 
+            !   concentrations of the gas of interest in air 
+            !   and water, respectively. 
+            !
+            ! -----------------------
+            ! LIQUID-OVER-GAS
+            ! -----------------------
+            !
+            ! From Sander et al. (1999):
+            !  KH = KH0 * exp( -dH/R * (1/T - 1/T0)  )      [Eq. 4]
+            !
+            !  where dH is the enthalpy of solution (J mol^-1), T is in 
+            !  Kelvin, T0 is the temperature at standard conditions
+            !  (T0 = 25 C = 298.15 K), R is the gas constant 
+            !  (8.314 m^3 Pa mol^-1 K^-1 or 8.314 J K^-1 mol^-1), and KH0
+            !  is the Henry's law constant at standard conditions. 
+            !  Both KH and KH0 are in units of M atm^-1.    
+            !    
+            !  To convert KH from M atm^-1 to mol m^-3 Pa^-1:
+            !  KH (M atm^-1) = 101.325 * KH (mol m^-3 Pa^-1)
+            !  
+            !  The dimensionless liquid-over-gas Henry's law constant
+            !  is then, 
+            !  KHcc = C_water / C_air = KH * R * T          [Eq. 2]
+            !
+            ! -----------------------
+            ! Convert liquid-over-gas to gas-over-liquid
+            ! -----------------------
+            !   KawD = 1/KHcc
+            !
+            ! References
+            ! Sander, R: Compilation of Henry's law constant for inorganic 
+            !   and organic species of potential importance in 
+            !   environmental chemistry, 1999.
+            !   http://www.mpch-mainz.mpg.de/~sander/res/henry.html.
+            !  
+            ! Johnson, M. T. A numerical scheme to calculate temperature and 
+            !   salinity dependent air-water transfer velocities for any gas.
+            !   Ocean Science, 6, 913-932, 2010.
+            !--------------------------------------------------- 
+
+c start, from Xianming -------------------------------
+c            ! Air-water partition coefficient 
+c            !   also known as...
+c            ! Henry's law constant (dimensionless)
+c            KawPCBa (i,j) = 10.0**1.65 !  for PFOS
+c
+c            ! Effective Henry's law constant (dimensionless)
+c            KawPCBeff(i,j) = KawPCBa (i,j)
+c     &   /(1.d0+10.d0**(pH(i,j,1,bi,bj)-pKa)) ! for PFOS
+c end, from Xianming --------------------------------- 
+
+c            ! Universal gas constant (m^3 Pa mol^-1 K^-1 or J K^-1 mol^-1)
+c            R    = 8.314d0
+
+c Moved to pcb_params.F (HMA, 22 JUL 2014)
+c            ! Ehthalpy of air-water exchange (J mol^-1)
+c            dH   = 39.d3      ! for PCB-28 (Gioia et al., 2010, JGR; Table 3)
+c
+c            ! Gas-over-liquid Henry's law constant 
+c            ! at 25 C (Pa m^3 mol^-1)
+c            Kaw0 = 87.d0      ! for PCB-28 (Gioia et al., 2010, JGR; Table 2)
+c
+cc            ! Convert to M atm^-1
+cc            KH0  = 101.325d0 / Kaw0 
+c
+c            ! Convert to mol Pa^-1 m^-3
+c            KH0 = 1.d0 / Kaw0
+
+            ! Temperature dependent liquid-over-gas Henry's
+            ! law constant (mol Pa^-1 m^-3)
+            !
+            ! Reference: Sander et al. (1999)
+            KH   = KH0 * exp( (-1*dH / R) 
+     &          * (1/(theta(i,j,k,bi,bj)+C2K) - 1/TK0 )  )
+
+            ! Dimensionless liquid-over-gas Henry's law constant 
+            KHcc = KH * R * ( theta(i,j,k,bi,bj)+C2K )
+
+            ! Dimensionless gas-over-liquid Henry's law constant
+            KawD = 1.d0 / KHcc
+
+            !--------------------------------------------------- 
+            ! Total transfer velocity, gas-phase (m sec^-1)
+            !
+            ! From Johnson et al. (2010):
+            !   Kaexch = (1/ka + KawD/kw)^-1           [Eq. 4]                   
+            !--------------------------------------------------- 
+c Used previously by Xianming (hma, 22 Jul 2014)
+c            Kaexch (i,j) = (1. _d 0 - fIce(i,j,bi,bj))
+c     &   /(1.d0/ka(i, j)+KawPCBeff(i,j)/kw(i,j)) 
+             Kaexch (i,j) = (1. _d 0 - fIce(i,j,bi,bj))
+     &          / ( 1.d0 / ka(i, j) + KawD / kw(i,j)  )  
+            
+            !--------------------------------------------------- 
+            ! Flux of gas across the air-water interface 
+            ! (mol m^-2 sec^-1)
+            !
+            ! From Johnson (2010):
+            !   F = -Kaexch(Cg - KawD*Cw) 
+            !
+            ! Original reference is Liss & Slater (1974)
+            !--------------------------------------------------- 
+c Used previously by Xianming (hma, 22 Jul 2014)
+c            pcbaevaso =      Kaexch(i,j)
+c     &        *(pcbaconco*1.0d-9/Mb !ng/m3 to mol/m3
+c     &          - PTR(i,j,1,bi,bj,ipcba)*KawPCBeff(i,j))  
+             pcbaevaso =      Kaexch(i,j)
+     &        *(pcbaconco*1.0d-9/Mb !ng/m3 to mol/m3
+     &          - PTR(i,j,1,bi,bj,ipcba)*KawD )  
+            
+            ! Not considering rivers for PCBs (hma, 18 Jul 2014)
+            !fluxPCBa(i,j) = -pcbaevaso +pcbarivero !mol/m2/s
+   
+            ! add atmospheric deposition inputs (hma, 7 aug 2014) 
+            !fluxPCBa(i,j) = -pcbaevaso  !mol/m2/s 
+            fluxPCBa(i,j) = -pcbaevaso + pcbadepoo  !mol/m2/s 
+     
+            IF (i .eq. 180 .and. j .eq. 80) THEN
+              write(*,*)'fice          at (180,80):',fice(i,j,bi,bj)
+              write(*,*)'pisvel        at (180,80):',pisvel(i,j,bi,bj)
+              write(*,*)'Schmidt#air   at (180,80):',SchmidtAPCBa
+              write(*,*)'Schmidt#water at (180,80):',SchmidtWPCBa
+              write(*,*)'PCBaSurfOcean at (180,80):',
+     &                     max(PTR(i,j,1,bi,bj,ipcba),0d0)
+              write(*,*)'KawPCBeff     at (180,80):',KawPCBeff(i,j)
+              write(*,*)'Kaexch        at (180,80):',kaexch (i,j)
+              write(*,*)'FluxPCBa no seaspray at (180,80):',
+     &                     fluxPCBa(i,j)
+            ENDIF
+
+C Disable sea spray for PCBs (hma, 18 Jul 2014)
+C#ifdef ALLOW_SEASPRAY
+C        pcbaseasprayo =  (1. _d 0 - fIce(i,j,bi,bj))
+C     &          *seaspraywtrflux(i,j,bi,bj) !m3/m2/s
+C     &          *enrichfactor*PTR(i,j,1,bi,bj,ipcba)!mol/m3
+CC            write(*,*)'xz check enrichfactor:',enrichfactor                                             
+C            fluxPCBa(i,j) = fluxPCBa(i,j)-pcbaseasprayo
+C     &       
+C        If (i .eq. 180 .and. j .eq. 80) then          
+C        write(*,*)'FluxPCBa w/ seaspray at (180,80):',fluxPCBa(i,j)
+C        Endif
+C#endif        
+
+
+           !---------------------------------------------------            
+           ! Calculate diagnostics
+           !--------------------------------------------------- 
+#ifdef ALLOW_DIAGNOSTICS
+            ! Air concentration (ng m^-3)
+            pcbaconc_diag(i,j)  = pcbaconco
+ 
+            ! From rivers (mol m^-2 sec^-1)
+            pcbariver_diag(i,j) = pcbarivero
+
+            ! Ocean-to-air evasion (mol m^-2 sec^-1) 
+            pcbaevas_diag(i,j)  = pcbaevaso  
+
+            ! Inputs from atmospheric deposition (mol m^-2 sec^-1)
+            pcbadep_diag(i,j)   = pcbadepoo
+#endif       
+
+           ELSE
+             fluxPCBa(i,j) = 0. _d 0
+           ENDIF
+
+c$$$C---------------------------------------------------            
+c$$$C Calculate diagnistics
+c$$$C--------------------------------------------------- 
+c$$$#ifdef ALLOW_DIAGNOSTICS
+c$$$            ! Air concentration (ng m^-3)
+c$$$            pcbaconc_diag(i,j)  = pcbaconco
+c$$$ 
+c$$$            ! From rivers (mol m^-2 sec^-1)
+c$$$            pcbariver_diag(i,j) = pcbarivero
+c$$$
+c$$$            ! Ocean-to-air evasion (mol m^-2 sec^-1) 
+c$$$            pcbaevas_diag(i,j)  = pcbaevaso  
+c$$$
+c$$$            ! Inputs from atmospheric deposition (mol m^-2 sec^-1)
+c$$$            pcbadep_diag(i,j)   = pcbadepoo
+c$$$
+c$$$c Disable sea spray (hma, 21 jul 2014)
+c$$$c#ifdef ALLOW_SEASPRAY
+c$$$c            pcbaseaspray_diag(i,j) = pcbaseasprayo
+c$$$c#endif          
+c$$$
+c$$$#endif       
+
+         ENDDO
+        ENDDO
+
+C update surface tendencies      
+        DO j=jMin,jMax
+          DO i=iMin,iMax
+           SURFPCBa(i,j)=
+     &         HFacC(i,j,1,bi,bj)*FluxPCBa(i,j)*recip_drF(1)
+C       xz: drF-Cell face separation along Z axis ( units of r ).     
+          ENDDO
+         ENDDO
+
+C---------------------------------------------------
+C Write diagnostics
+C---------------------------------------------------
+#ifdef ALLOW_DIAGNOSTICS
+        ! Atmospheric concentration (units?)
+        WRITE(diagname,'(A8)') 'PCBaCONC'
+        CALL DIAGNOSTICS_FILL( pcbaconc_diag(1-Olx,1-Oly), diagname,
+     &                         0,1,2,bi,bj,myThid )
+
+        ! Inputs from rivers (units?)
+        WRITE(diagname,'(A8)') 'PCBaRIVR'
+        CALL DIAGNOSTICS_FILL( pcbariver_diag(1-Olx,1-Oly), diagname,
+     &                         0,1,2,bi,bj,myThid )
+
+        ! Atmospheric deposistion (units?)
+        WRITE(diagname,'(A8)') 'PCBaDEPO'
+        CALL DIAGNOSTICS_FILL( pcbadep_diag(1-Olx,1-Oly), diagname,
+     &                         0,1,2,bi,bj,myThid )
+#ifdef ALLOW_SEASPRAY
+        WRITE(diagname,'(A8)') 'PCBaSPRY'
+        CALL DIAGNOSTICS_FILL( pcbaseaspray_diag(1-Olx,1-Oly), diagname,
+     &                         0,1,2,bi,bj,myThid )
+#endif
+        WRITE(diagname,'(A8)') 'PCBaEVAS'
+        CALL DIAGNOSTICS_FILL( pcbaevas_diag(1-Olx,1-Oly), diagname,
+     &                         0,1,2,bi,bj,myThid )     
+#endif
+
+#endif /* ALLOW_PCB */
+#endif /* ALLOW_PTRACERS */
+
+      RETURN
+ 
+      END
+
+
+
+
+        
+        
+
+        
+        
+        

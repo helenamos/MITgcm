@@ -1,0 +1,60 @@
+ &PCB_FORCING
+
+# Ice fraction (source? Ask Xianming)
+  PCB_iceFile    = './input/nasa_icefraction_mth-2d.bin',
+
+# Wind speed from MERRA (why MERRA? Ask Xianming.)
+  PCB_windFile   = './input_PCB/wind_mth_2000.MERRA.1x1.bin',
+
+# Atmospheric concentrations (NOTE this is still a dummy PFC file!)
+  PCBa_concFile  = './input_PCB/PFCnConc.bin',
+
+# Atmospheric deposition
+#  PCBi_depoFile  = './input_PCB/PFCiDepo.bin',
+  PCBp_depoFile  = './input_PCB/PCBpartdep_20140807.ecco.ann.1x1.bin',
+  PCBa_depoFile  = './input_PCB/PCBgasdep_20140807.ecco.ann.1x1.bin',  
+
+# Inputs from rivers
+#  PCBi_riverFile = './input_PCB/PFCiRiver.bin',
+  PCBp_riverFile = './input_PCB/PFCpRiver.bin',
+
+# (Solar radiation??)
+#  radsw_file='./input_gc/radsw.ecco.1x1.bin',
+
+# Chlorophyll
+  chl_File       = './input_darwin/chl.10years.sixspecies.ecco.1x1.bin',
+
+# Net primary productivity
+  npp_File       = './input_darwin/npp.10years.sixspecies.ecco.1x1.bin',
+
+# Dissolved organic carbon
+  doc_File       = './input_darwin/doc.coast1d500.10years.sixspecies.ecco.1x1.bin',
+
+# Particulate organic carbon
+  poc_File       = './input_darwin/poc.10years.sixspecies.incplankton.ecco.1x1.bin',
+
+# What is this??
+# Fdoc_File='./input_darwin/fdoc.10years.sixspecies.ecco.1x1.bin',
+  Fpoc_File      = './input_darwin/fpoc.10years.sixspecies.incplankton.ecco.1x1.bin',
+
+# What is this??
+  Fremin_File    = './input_darwin/fremin.10years.sixspecies.incdoc.ecco.1x1.bin',
+#  NO3_File='./input_darwin/no3.10years.sixspecies.ecco.1x1.bin',
+#  phytoP_File='./input_darwin/phytop.10years.sixspecies.ecco.1x1',
+#  zooP_File='./input_darwin/zoop.10years.sixspecies.ecco.1x1',    
+
+# air-sea exchange and deposition frequency
+# but now, only wind speed is tested 
+  PCB_forcingPeriod=2592000.,
+#   PCB_forcingPeriod=10800.,
+#  HG_forcingPeriod=10800.,
+#  HG_forcingCycle=2592000.,
+  PCB_forcingCycle=31104000.,
+#   PCB_forcingCycle=2592000.,
+
+# darwin fields frequency
+  PCB_chemPeriod=31104000.,
+  PCB_chemCycle=31104000.,  
+  PCB_emisPeriod=31104000.,
+  PCB_emisCycle=31104000.,  
+ &

@@ -1,0 +1,17 @@
+ &DARWIN_FORCING
+ darwin_iceFile='input/nasa_icefraction_mth-2d.bin',
+ darwin_ironFile='input/mahowald2009_solubile_current_smooth_oce_mth-2d.bin',
+ darwin_PARFile='input/ecco_oasim_total_below_oneband_einm2d.bin',
+ darwin_relaxscale=0.,
+ darwin_seed=56,
+ /
+
+ &DIC_FORCING
+ DIC_windFile  = 'input/tren_speed_mth-2d.bin',
+#DIC_atmospFile= ' ',
+ dic_int1 =1,
+ dic_pCO2 = 278e-6,
+ /
+
+&DARWIN_SPECTRAL_PARM
+/

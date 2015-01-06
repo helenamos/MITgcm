@@ -1,0 +1,8 @@
+#!/bin/bash 
+#SBATCH -n 36  #Number of cores 
+#SBATCH -t 4000  #Runtime in minutes 
+#SBATCH -p general  #Partition to submit to 
+#SBATCH --mem-per-cpu=3750  #Memory per cpu in MB (see also --mem)
+#SBATCH --mail-type=ALL     #Send me an email regarding status change
+
+mpirun -np 36  ./mitgcmuv

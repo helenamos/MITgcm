@@ -1,0 +1,10 @@
+# Packages
+ &PACKAGES
+ useGMRedi      = .TRUE.
+ usePTRACERS    = .TRUE.
+ useGCHEM       = .TRUE.,
+ useKPP         = .TRUE.,
+ useMNC         = .FALSE.,
+ useOFFLINE     = .TRUE.,
+ useDiagnostics = .TRUE.,
+ /

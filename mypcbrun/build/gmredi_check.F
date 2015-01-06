@@ -1,0 +1,1 @@
+../../pkg/gmredi/gmredi_check.F

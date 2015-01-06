@@ -1,0 +1,12 @@
+Notes to self...
+
+09 Jul 2014
+  Where I left off:
+  - I compiled the code (renamed mitgcmuv.hma), but cannot run it. I get a seg fault. I copied
+    Xianming's mitgcmuv file from /mypfcrun/run/ and ran it. The run completed normally, but 
+    it looks like it's throwing errors and just printing zeros. 
+
+    Ask Xianming to sit down and get the code to run and to generate output identical to
+    what he has so I can compare the two apples-to-apples and confirm I can reproduce his PFC
+    results!
+

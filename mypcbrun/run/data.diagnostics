@@ -1,0 +1,158 @@
+#================================================================
+# PCB diagnostics
+#
+# PCBiDEPO                 Atmospheric PCBi deposition flux
+# PCBaCONC                 Atmospheric PCBa concentration
+# PCBaEVAS                 PCBa evasion flux from ocean
+# PCBpSINK                 PCBp sinking flux at bottom of level
+#
+# MODIFICATION HISTORY
+#   15 Jul 2014 - hma - Remove PCBi tracer. 
+#================================================================
+#
+ &diagnostics_list
+#
+#   
+   
+  frequency(1) = 864000.,
+   fields(1,1) = 'PCBaCONC',
+   filename(1) = 'PCBaCONC',
+
+  frequency(2) = 43200.,
+   fields(1,2) = 'PCBaRIVR',
+   filename(2) = 'PCBaRIVER',
+   
+  frequency(3) = 864000.,
+   fields(1,3) = 'PCBaSPRY',
+   filename(3) = 'PCBaSEASPRAY', 
+      
+  frequency(4) = 864000.,
+   fields(1,4) = 'PCBaEVAS ',
+   filename(4) = 'PCBaEVAS',
+     
+  frequency(5) = 43200.,
+   fields(1,5) = 'PCBaDEPO',
+   filename(5) = 'PCBaDEPO',
+   
+  frequency(6) = 43200.,
+   fields(1,6) = 'PCBpDEPO',
+   filename(6) = 'PCBpDEPO', 
+
+#  frequency(7) = 43200.,
+#   fields(1,7) = 'PCBiRIVR',
+#   filename(7) = 'PCBiRIVER',
+
+  frequency(7) = 43200.,
+   fields(1,7) = 'PCBpRIVR',
+   filename(7) = 'PCBpRIVER',
+
+  frequency(8) = 864000.,
+   fields(1,8) = 'PCBaPART ',
+   filename(8) = 'PCBaPART',   
+
+#  frequency(10) = 864000.,
+#   fields(1,10) = 'PCBiPART ',
+#   filename(10) = 'PCBiPART',   
+
+  frequency(9) = 864000.,
+   fields(1,9) = 'PCBpPART ',
+   filename(9) = 'PCBpPART',   
+   
+  frequency(10) = 864000.,
+   fields(1,10) = 'PCBpSINK',
+   filename(10) = 'PCBpSINK',
+
+#   
+  frequency(11) = 864000.,
+   fields(1,11) = 'ADVxTr01',
+   filename(11) = 'PCBaXADV',
+   
+  frequency(12) = 864000.,
+   fields(1,12) = 'ADVyTr01',
+   filename(12) = 'PCBaYADV',
+   
+  frequency(13) = 864000.,
+   fields(1,13) = 'ADVrTr01',
+   filename(13) = 'PCBaVADV',
+           
+  frequency(14) = 864000.,
+   fields(1,14) = 'DFrETr01',
+   filename(14) = 'PCBaVDFE',
+   
+  frequency(15) = 864000.,
+   fields(1,15) = 'DFrITr01',
+   filename(15) = 'PCBaVDFI',
+   
+  frequency(16) = 864000.,
+   fields(1,16) = 'KPPgTr01',
+   filename(16) = 'PCBaVDFN',
+
+#  frequency(19) = 864000.,
+#   fields(1,19) = 'ADVxTr02',
+#   filename(19) = 'PCBiXADV',
+   
+#  frequency(20) = 864000.,
+#   fields(1,20) = 'ADVyTr02',
+#   filename(20) = 'PCBiYADV',
+   
+#  frequency(21) = 864000.,
+#   fields(1,21) = 'ADVrTr02',
+#   filename(21) = 'PCBiVADV',
+           
+#  frequency(22) = 864000.,
+#   fields(1,22) = 'DFrETr02',
+#   filename(22) = 'PCBiVDFE',
+   
+#  frequency(23) = 864000.,
+#   fields(1,23) = 'DFrITr02',
+#   filename(23) = 'PCBiVDFI',
+   
+#  frequency(24) = 864000.,
+#   fields(1,24) = 'KPPgTr02',
+#   filename(24) = 'PCBiVDFN', 
+   
+  frequency(17) = 864000.,
+   fields(1,17) = 'ADVxTr02',
+   filename(17) = 'PCBpXADV',
+   
+  frequency(18) = 864000.,
+   fields(1,18) = 'ADVyTr02',
+   filename(18) = 'PCBpYADV',
+   
+  frequency(19) = 864000.,
+   fields(1,19) = 'ADVrTr02',
+   filename(19) = 'PCBpVADV',
+           
+  frequency(20) = 864000.,
+   fields(1,20) = 'DFrETr02',
+   filename(20) = 'PCBpVDFE',
+   
+  frequency(21) = 864000.,
+   fields(1,21) = 'DFrITr02',
+   filename(21) = 'PCBpVDFI',
+   
+  frequency(22) = 864000.,
+   fields(1,22) = 'KPPgTr02',
+   filename(22) = 'PCBpVDFN',    
+   
+ &
+ 
+ 
+
+# Parameter for Diagnostics of per level statistics:
+#-----------------
+# for each output-stream:
+#  stat_fname(n) : prefix of the output file name (only 8.c long) for
+#outp.stream n
+#  stat_freq(n):< 0 : write snap-shot output every |stat_freq| seconds
+#               > 0 : write time-average output every stat_freq seconds
+#  stat_phase(n)    : write at time = stat_phase + multiple of |stat_freq|
+#  stat_region(:,n) : list of "regions" (default: 1 region only=global)
+#  stat_fields(:,n) : list of diagnostics fields (8.c) (see
+#"available_diagnostics.log"
+#                 file for the list of all available diag. in this particular
+#config)
+#-----------------
+ &DIAG_STATIS_PARMS
+#- an example just to check the agreement with MONITOR output:
+ &

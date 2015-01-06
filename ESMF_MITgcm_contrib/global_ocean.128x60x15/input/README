@@ -1,0 +1,16 @@
+bathymetry.bin   :: depth map nx . ny real*4, ieee-be
+data   
+data.gmredi
+data.pkg
+data.ptracers
+eedata
+lev_s.bin           :: xyz salinity climatology, nx . ny . nr, real*4, ieee-be
+lev_sss.bin         :: xy monthly surface salinity, nx . ny . 12, real*4, ieee-be
+lev_sst.bin         :: xy monthly surface temperatures, nx . ny . 12, real*4, ieee-be
+lev_t.bin           :: xyz temperature climatology, nx . ny . nr, real*4, ieee-be
+ncep_emp.bin        :: xy monthly net precipitation
+ncep_qnet.bin       :: xy monthly net heat flux
+POLY3.COEFFS        
+README
+trenberth_taux.bin  :: xy monthly zonal wind stress
+trenberth_tauy.bin  :: xy monthly zonal wind stress

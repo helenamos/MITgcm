@@ -1,0 +1,5 @@
+<gridded_component>
+<text_description>
+Gridded component to use in place of real NCAR CAM when testing MITgcm OCN with CAM coupled code
+</text_description>
+</gridded_component>

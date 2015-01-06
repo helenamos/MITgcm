@@ -1,0 +1,1 @@
+../../pkg/gmredi/gmredi_diagnostics_init.F

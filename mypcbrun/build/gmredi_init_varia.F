@@ -1,0 +1,1 @@
+../../pkg/gmredi/gmredi_init_varia.F

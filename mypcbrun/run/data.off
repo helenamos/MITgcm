@@ -1,0 +1,23 @@
+ &OFFLINE_PARM01
+  UvelFile      = '../../offline/DDuvel/DDuvel'      ,
+  VvelFile      = '../../offline/DDvvel/DDvvel'      ,
+  WvelFile      = '../../offline/DDwvel/DDwvel'      ,
+  GMwxFile      = '../../offline/DGMkwx/DGMkwx'      ,
+  GMwyFile      = '../../offline/DGMkwy/DGMkwy'      ,
+  GMwzFile      = '../../offline/DGMkwz/DGMkwz'      ,
+  SaltFile      = '../../offline/DDsalt/DDsalt'      ,
+  ThetFile      = '../../offline/DDtheta/DDtheta'    ,
+  SFluxFile     = '../../offline/DFOSflux/DFOSflux'  ,
+  KPP_DiffSFile = '../../offline/DKPPdiffs/DKPPdiffs',
+  KPP_ghatKFile = '../../offline/DKPPghatK/DKPPghatK',
+  IceFile       = '../../offline/SIarea/SIarea'      ,
+ &end
+
+ &OFFLINE_PARM02
+  offlineIter0         = 78912    ,
+  deltaToffline        = 3600.    ,
+  offlineForcingPeriod = 86400.   ,
+  offlineForcingCycle  = 31104000.,
+#  offlineForcingCycle = 31557600.,
+ &end
+

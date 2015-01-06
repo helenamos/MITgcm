@@ -1,0 +1,13 @@
+build.sh       :: Script that controls the build of the component library
+               :: and module for this target.
+
+code/          :: Code customizations to and package selections from core MITgcm
+               :: source for this target
+
+diags_matlab/  :: Useful Matlab routines for plotting outpt
+
+input/         :: Input bathymetry, initial conditions and forcing
+
+results/       :: Reference output for validation
+
+run/           :: Subdirectory for building code

@@ -1,0 +1,14 @@
+-------------------------------------------------------------
+README for /home/hamos/MITgcm/pkg/pcb/
+
+LAST MODIFIED 
+  07 July 2014 (hma)
+
+USERS
+  (01) hma = Helen M. Amos
+-------------------------------------------------------------
+
+This directory contains the FORTRAN modules for the MITgcm
+PCB simulation. The code is modeled after Xianming Zhang's
+MITgcm PFC simulation. Xianming's PFC code was originally
+copied on 07 July 2014. (hma)

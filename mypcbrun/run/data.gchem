@@ -1,0 +1,4 @@
+ &GCHEM_PARM01
+ usePCB   = .TRUE., 
+ nsubtime = 1     ,
+ /
